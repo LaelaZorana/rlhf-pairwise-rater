@@ -2,5 +2,8 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+.DS_Store
+
+# personal rating outputs
 *.ratings.jsonl
 my_ratings.jsonl
