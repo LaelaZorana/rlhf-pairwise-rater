@@ -17,12 +17,48 @@ from __future__ import annotations
 
 import json
 import glob
-from pathlib import Path
+from html import escape
 
 import gradio as gr
 
 from rater import stats
 from rater.prompts import AXES, AXIS_DESCRIPTIONS
+
+ACCENT = "#7c3aed"  # purple
+
+CSS = """
+:root { --accent: %s; }
+.gradio-container { max-width: 1120px !important; }
+#hero { background: linear-gradient(135deg, var(--accent), #0f172a);
+        color:#fff; border-radius:18px; padding:26px 30px; margin-bottom:6px; }
+#hero h1 { margin:0 0 8px 0; font-size:1.75rem; font-weight:800; letter-spacing:-.01em; }
+#hero p { margin:0; opacity:.93; font-size:1.02rem; line-height:1.5; max-width:780px; }
+#hero .pill { display:inline-block; background:rgba(255,255,255,.16); border-radius:999px;
+        padding:3px 11px; font-size:.74rem; font-weight:700; margin-bottom:12px; letter-spacing:.04em; }
+.verdict { border-radius:12px; padding:14px 18px; font-size:1.08rem; font-weight:800; margin:2px 0 12px; }
+.verdict.ok   { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+.verdict.flag { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
+.kappa { border-radius:12px; padding:16px 20px; margin:2px 0 12px; }
+.kappa b { font-size:1.5rem; }
+table.qc { width:100%%; border-collapse:collapse; margin:8px 0; font-size:.92rem; }
+table.qc th { text-align:left; padding:7px 10px; border-bottom:2px solid var(--accent); font-weight:700; }
+table.qc td { padding:7px 10px; border-bottom:1px solid rgba(128,128,128,.2); }
+pre.json { background:rgba(128,128,128,.12); padding:10px 12px; border-radius:8px;
+        font-size:.82rem; overflow-x:auto; }
+.footer { margin-top:20px; padding-top:14px; border-top:1px solid rgba(128,128,128,.25);
+        font-size:.88rem; text-align:center; opacity:.92; }
+.footer a { text-decoration:none; font-weight:700; color:var(--accent); }
+""" % ACCENT
+
+FOOTER = """
+<div class="footer">
+🧰 Part of an AI evaluation &amp; QC toolkit by <b>Laela Zorana</b> &nbsp;·&nbsp;
+🔍 <a href="https://huggingface.co/spaces/LaelaZ/ai-agent-scenario-qc">Scenario QC</a> &nbsp;·&nbsp;
+⚖️ RLHF Rater &nbsp;·&nbsp;
+📦 <a href="https://huggingface.co/spaces/LaelaZ/scorm-qa-validator">SCORM QA</a> &nbsp;·&nbsp;
+<a href="https://github.com/LaelaZorana/rlhf-pairwise-rater">Source on GitHub</a>
+</div>
+"""
 
 
 def _load_cases() -> list:
@@ -54,34 +90,25 @@ def pick_case(label: str):
 def rate(prompt, resp_a, resp_b,
          h_a, h_b, harm_a, harm_b, acc_a, acc_b, if_a, if_b,
          preference, confidence):
-    """Build a rating record and run the real self-consistency check on it."""
     rating = {
-        "id": "demo",
-        "preference": preference,
-        "confidence": int(confidence),
-        "scores_a": {
-            "helpfulness": int(h_a), "harmlessness": int(harm_a),
-            "accuracy": int(acc_a), "instruction_following": int(if_a),
-        },
-        "scores_b": {
-            "helpfulness": int(h_b), "harmlessness": int(harm_b),
-            "accuracy": int(acc_b), "instruction_following": int(if_b),
-        },
+        "id": "demo", "preference": preference, "confidence": int(confidence),
+        "scores_a": {"helpfulness": int(h_a), "harmlessness": int(harm_a),
+                     "accuracy": int(acc_a), "instruction_following": int(if_a)},
+        "scores_b": {"helpfulness": int(h_b), "harmlessness": int(harm_b),
+                     "accuracy": int(acc_b), "instruction_following": int(if_b)},
     }
     summary = stats.summarize([rating])
     flagged = "demo" in summary.get("self_consistency_flags", [])
 
-    lines = [f"### Preference: **{preference}**  ·  confidence {int(confidence)}/5", ""]
     if flagged:
-        lines.append(
-            f"> ⚠️ **Self-consistency flag.** You preferred **{preference}**, but the "
-            "other response scored higher on *every* axis. Re-check the call — this is "
-            "exactly the kind of silent rating error the tool is built to catch."
-        )
+        banner = (f'<div class="verdict flag">⚠️ Self-consistency flag — you preferred '
+                  f'<b>{preference}</b>, but the other response scored higher on <i>every</i> '
+                  f'axis. This is exactly the silent rating error the tool catches.</div>')
     else:
-        lines.append("> ✅ No self-consistency conflict — your preference lines up with your axis scores.")
-    lines += ["", "**Rating record (JSONL):**", "```json", json.dumps(rating), "```"]
-    return "\n".join(lines)
+        banner = ('<div class="verdict ok">✅ Consistent — your preference '
+                  f'(<b>{preference}</b>, confidence {int(confidence)}/5) lines up with your axis scores.</div>')
+    body = f'<pre class="json">{escape(json.dumps(rating, indent=2))}</pre>'
+    return banner + body
 
 
 KAPPA_EXAMPLE_1 = "\n".join(json.dumps(r) for r in [
@@ -110,53 +137,53 @@ def agreement(rater1_text, rater2_text):
         r1 = _parse_jsonl(rater1_text)
         r2 = _parse_jsonl(rater2_text)
     except json.JSONDecodeError as exc:
-        return f"❌ Invalid JSONL — {exc}"
+        return f'<div class="verdict flag">❌ Invalid JSONL — {escape(str(exc))}</div>'
 
     result = stats.agreement_between(r1, r2)
     if not result.get("common_cases"):
-        return "No overlapping case IDs between the two raters."
+        return '<div class="verdict flag">No overlapping case IDs between the two raters.</div>'
 
     kappa = result["kappa"]
     if kappa is None:
-        interp = ""
+        interp, bg, fg = "", "#e5e7eb", "#111827"
     elif kappa >= 0.8:
-        interp = "almost perfect agreement"
+        interp, bg, fg = "almost perfect agreement", "#dcfce7", "#166534"
     elif kappa >= 0.6:
-        interp = "substantial agreement"
+        interp, bg, fg = "substantial agreement", "#dcfce7", "#166534"
     elif kappa >= 0.4:
-        interp = "moderate agreement"
+        interp, bg, fg = "moderate agreement", "#fef3c7", "#92400e"
     elif kappa >= 0.2:
-        interp = "fair agreement"
+        interp, bg, fg = "fair agreement", "#fef3c7", "#92400e"
     else:
-        interp = "poor / near-chance agreement — the rubric may be ambiguous, or a rater has drifted"
+        interp, bg, fg = ("poor / near-chance — the rubric may be ambiguous or a rater has drifted",
+                          "#fee2e2", "#991b1b")
 
-    lines = [
-        f"### Cohen's κ = **{kappa}**  ({interp})",
-        f"Compared **{result['common_cases']}** overlapping cases.",
-        "",
-    ]
+    out = [f'<div class="kappa" style="background:{bg};color:{fg};">'
+           f"Cohen's κ = <b>{kappa}</b> &nbsp; {interp}<br>"
+           f'<span style="font-size:.9rem;">compared {result["common_cases"]} overlapping cases</span></div>']
     disagreements = result.get("disagreements", [])
     if disagreements:
-        lines.append("**Where the two raters disagreed:**")
-        lines.append("")
-        lines.append("| Case | Rater 1 | Rater 2 |")
-        lines.append("|---|---|---|")
+        out.append('<table class="qc"><tr><th>Case</th><th>Rater 1</th><th>Rater 2</th></tr>')
         for cid, p1, p2 in disagreements:
-            lines.append(f"| {cid} | {p1} | {p2} |")
+            out.append(f"<tr><td>{escape(str(cid))}</td><td>{escape(str(p1))}</td>"
+                       f"<td>{escape(str(p2))}</td></tr>")
+        out.append("</table>")
     else:
-        lines.append("No disagreements on the overlapping cases.")
-    return "\n".join(lines)
+        out.append("<p>No disagreements on the overlapping cases.</p>")
+    return "\n".join(out)
 
 
-with gr.Blocks(title="RLHF Pairwise Response Rater") as demo:
-    gr.Markdown(
-        "# ⚖️ RLHF Pairwise Response Rater\n"
-        "The workflow behind preference data for RLHF — rate two model responses on four "
-        "axes, pick a winner, and the tool checks your work. It catches **self-consistency "
-        "errors** (you picked A but scored B higher everywhere) and measures **inter-rater "
-        "agreement** with Cohen's kappa, so you can tell whether two people are really "
-        "applying the same standard.\n\n"
-        "*Runs the real package (`rater/stats.py`), the same code the pytest suite covers.*"
+theme = gr.themes.Soft(primary_hue="purple", neutral_hue="slate",
+                       font=[gr.themes.GoogleFont("Inter"), "system-ui", "sans-serif"])
+
+with gr.Blocks(title="RLHF Pairwise Response Rater", theme=theme, css=CSS) as demo:
+    gr.HTML(
+        '<div id="hero"><span class="pill">RLHF / PREFERENCE DATA</span>'
+        "<h1>⚖️ RLHF Pairwise Response Rater</h1>"
+        "<p>The workflow behind preference data for RLHF — rate two model responses on four axes, "
+        "pick a winner, and the tool checks your work. It catches <b>self-consistency errors</b> "
+        "(you picked A but scored B higher everywhere) and measures <b>inter-rater agreement</b> "
+        "with Cohen's kappa, so you can tell whether two people apply the same standard.</p></div>"
     )
 
     with gr.Tab("Rate a pair"):
@@ -164,20 +191,20 @@ with gr.Blocks(title="RLHF Pairwise Response Rater") as demo:
                               value=CASE_LABELS[0] if CASE_LABELS else None)
         prompt_box = gr.Textbox(label="Prompt", lines=2)
         with gr.Row():
-            a_box = gr.Textbox(label="Response A", lines=6)
-            b_box = gr.Textbox(label="Response B", lines=6)
+            a_box = gr.Textbox(label="🅰 Response A", lines=6)
+            b_box = gr.Textbox(label="🅱 Response B", lines=6)
 
-        gr.Markdown("**Score each response 1–5 on every axis** "
+        gr.Markdown("**Score each response 1–5 on every axis** — "
                     + " · ".join(f"*{a}*: {AXIS_DESCRIPTIONS[a]}" for a in AXES))
         with gr.Row():
             with gr.Column():
-                gr.Markdown("**Response A**")
+                gr.Markdown("### 🅰 Response A")
                 h_a = gr.Slider(1, 5, value=3, step=1, label="helpfulness")
                 harm_a = gr.Slider(1, 5, value=3, step=1, label="harmlessness")
                 acc_a = gr.Slider(1, 5, value=3, step=1, label="accuracy")
                 if_a = gr.Slider(1, 5, value=3, step=1, label="instruction_following")
             with gr.Column():
-                gr.Markdown("**Response B**")
+                gr.Markdown("### 🅱 Response B")
                 h_b = gr.Slider(1, 5, value=3, step=1, label="helpfulness")
                 harm_b = gr.Slider(1, 5, value=3, step=1, label="harmlessness")
                 acc_b = gr.Slider(1, 5, value=3, step=1, label="accuracy")
@@ -187,8 +214,8 @@ with gr.Blocks(title="RLHF Pairwise Response Rater") as demo:
             preference = gr.Radio(["A", "B", "TIE"], value="A", label="Overall preference")
             confidence = gr.Slider(1, 5, value=3, step=1, label="Confidence")
 
-        rate_btn = gr.Button("Check my rating", variant="primary")
-        rate_out = gr.Markdown()
+        rate_btn = gr.Button("Check my rating ▶", variant="primary", size="lg")
+        rate_out = gr.HTML()
 
         case_dd.change(pick_case, inputs=case_dd, outputs=[prompt_box, a_box, b_box])
         rate_btn.click(
@@ -200,16 +227,18 @@ with gr.Blocks(title="RLHF Pairwise Response Rater") as demo:
 
     with gr.Tab("Inter-rater agreement (Cohen's κ)"):
         gr.Markdown(
-            "Paste each rater's ratings as JSONL (one object per line, each with an "
-            "`id` and a `preference` of `A` / `B` / `TIE`). The tool matches on shared "
-            "case IDs and computes Cohen's kappa."
+            "Paste each rater's ratings as JSONL (one object per line, each with an `id` and a "
+            "`preference` of `A` / `B` / `TIE`). The tool matches on shared case IDs and computes κ."
         )
         with gr.Row():
             r1_box = gr.Textbox(label="Rater 1 (JSONL)", value=KAPPA_EXAMPLE_1, lines=8)
             r2_box = gr.Textbox(label="Rater 2 (JSONL)", value=KAPPA_EXAMPLE_2, lines=8)
-        kappa_btn = gr.Button("Compute agreement", variant="primary")
-        kappa_out = gr.Markdown()
+        kappa_btn = gr.Button("Compute agreement ▶", variant="primary", size="lg")
+        kappa_out = gr.HTML()
         kappa_btn.click(agreement, inputs=[r1_box, r2_box], outputs=kappa_out)
+
+    gr.HTML(FOOTER)
+    gr.Markdown("*Runs the actual package (`rater/stats.py`) — the same code the pytest suite covers.*")
 
     demo.load(pick_case, inputs=case_dd, outputs=[prompt_box, a_box, b_box])
 
