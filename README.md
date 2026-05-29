@@ -1,5 +1,7 @@
 # rlhf-pairwise-rater
 
+**🔗 Live demo:** [try it on Hugging Face Spaces](https://huggingface.co/spaces/LaelaZ/rlhf-pairwise-rater) — rate a pair and see the self-consistency check and Cohen's κ live.
+
 A small CLI for **pairwise rating of AI model responses** — the kind of task that shows up everywhere in RLHF / preference-data pipelines: you get a prompt and two candidate responses (call them A and B), you rate them on a few axes (helpfulness, harmlessness, accuracy, instruction-following), and pick a winner.
 
 I built this to practice the rating workflow itself, and to have a structured way of *recording* my own ratings as I went through evaluation tasks — so I could review my rubric application later, look for inconsistencies in my own judgments, and produce a clean dataset that another reviewer could audit.
