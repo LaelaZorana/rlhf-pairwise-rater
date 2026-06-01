@@ -64,7 +64,7 @@ def cmd_agreement(args) -> int:
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="rater")
+    p = argparse.ArgumentParser(prog="rlhf-rater")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     pr = sub.add_parser("rate", help="Interactively rate a JSONL of comparison cases")

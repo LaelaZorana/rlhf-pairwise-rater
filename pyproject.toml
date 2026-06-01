@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rlhf-pairwise-rater"
+dynamic = ["version"]
+description = "Pairwise rating of model responses for RLHF, with a self-consistency check and Cohen's kappa inter-rater agreement."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Laela Zorana", email = "zoranalaela9@gmail.com" }]
+keywords = [
+    "rlhf",
+    "preference-data",
+    "evaluation",
+    "human-feedback",
+    "inter-rater-agreement",
+    "cohens-kappa",
+    "annotation",
+    "llm-evaluation",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Quality Assurance",
+]
+# The library core is pure standard library. No runtime dependencies.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+demo = ["gradio>=4.0"]
+
+[project.urls]
+Homepage = "https://github.com/LaelaZorana/rlhf-pairwise-rater"
+Repository = "https://github.com/LaelaZorana/rlhf-pairwise-rater"
+"Live demo" = "https://huggingface.co/spaces/LaelaZ/rlhf-pairwise-rater"
+Changelog = "https://github.com/LaelaZorana/rlhf-pairwise-rater/blob/main/CHANGELOG.md"
+
+[project.scripts]
+rlhf-rater = "rater.__main__:main"
+
+[tool.setuptools]
+packages = ["rater"]
+
+[tool.setuptools.dynamic]
+version = { attr = "rater.__version__" }
