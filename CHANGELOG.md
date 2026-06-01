@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0 - 2026-05-31
+
+- Packaged for PyPI: added `pyproject.toml`, so the project installs with
+  `pip install rlhf-pairwise-rater` instead of a manual clone.
+- Public API: the key functions are now re-exported from the top level, so you
+  can write `from rater import summarize, cohens_kappa, agreement_between`.
+- Console entry point: the CLI is now available as the `rlhf-rater` command,
+  alongside the existing `python -m rater`.
+- Continuous integration: GitHub Actions runs the test suite on Python 3.9
+  through 3.12 on every push and pull request.
+- No runtime dependencies for the library core (pure standard library).
+
 ## 0.2.0 — 2026-05-21
 
 - Added `agreement` subcommand (Cohen's kappa between two raters)

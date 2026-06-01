@@ -4,6 +4,11 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 
+# build artifacts
+build/
+dist/
+*.egg-info/
+
 # personal rating outputs
 *.ratings.jsonl
 my_ratings.jsonl
