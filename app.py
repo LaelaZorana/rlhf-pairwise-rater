@@ -369,10 +369,8 @@ html, body, gradio-app, .dark { background:#ffffff !important; }
 FOOTER = """
 <div class="rl-footer">
 Part of an AI evaluation and QC toolkit by <b>Laela Zorana</b><br>
-<a href="https://huggingface.co/spaces/LaelaZ/ai-agent-scenario-qc">Scenario QC</a> &middot;
-RLHF Rater &middot;
-<a href="https://huggingface.co/spaces/LaelaZ/scorm-qa-validator">SCORM QA</a> &middot;
-<a href="https://github.com/LaelaZorana/rlhf-pairwise-rater">Source on GitHub</a>
+<a href="https://laelazorana.github.io">Portfolio</a> &middot; <a href="https://www.linkedin.com/in/laela-zorana-362309114">LinkedIn</a> &middot; <a href="https://github.com/LaelaZorana">GitHub</a> &middot; <a href="https://huggingface.co/LaelaZ">Hugging Face</a><br>
+<span style="opacity:.7">More demos:</span> <a href="https://huggingface.co/spaces/LaelaZ/distilbert-emotion">Emotion</a> &middot; <a href="https://huggingface.co/spaces/LaelaZ/cnn-gradcam">CNN + Grad-CAM</a> &middot; <a href="https://huggingface.co/spaces/LaelaZ/timeseries-lstm">Time-Series</a> &middot; <a href="https://huggingface.co/spaces/LaelaZ/nn-from-scratch">NN From Scratch</a> &middot; <a href="https://huggingface.co/spaces/LaelaZ/ai-agent-scenario-qc">Scenario QC</a> &middot; <a href="https://huggingface.co/spaces/LaelaZ/scorm-qa-validator">SCORM QA</a>
 </div>
 """
 
