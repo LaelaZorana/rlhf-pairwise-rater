@@ -2,12 +2,12 @@
 Gradio demo for the RLHF Pairwise Response Rater.
 
 Two things this tool does that a plain rating form does not:
-  1. Self-consistency check — flags when you pick a winner but score the loser
+  1. Self-consistency check: flags when you pick a winner but score the loser
      higher on every axis (a real, common rater mistake).
-  2. Inter-rater agreement — Cohen's kappa between two raters, so you can see
+  2. Inter-rater agreement: Cohen's kappa between two raters, so you can see
      whether two people are actually applying the same standard.
 
-Both run the real package code in rater/stats.py — the same functions covered
+Both run the real package code in rater/stats.py, the same functions covered
 by the pytest suite.
 
 Run locally:   pip install -r requirements.txt && python app.py
