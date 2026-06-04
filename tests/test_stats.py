@@ -36,7 +36,7 @@ def test_kappa_perfect():
 
 
 def test_kappa_no_better_than_chance():
-    # Both raters always say A — kappa undefined / 1.0 by convention here
+    # Both raters always say A, kappa undefined / 1.0 by convention here
     k = stats.cohens_kappa(["A", "A", "A"], ["A", "A", "A"])
     assert k == 1.0
 
