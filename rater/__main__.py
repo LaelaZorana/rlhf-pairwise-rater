@@ -17,7 +17,7 @@ def cmd_rate(args) -> int:
     already_rated_ids: set = set()
     if out.exists():
         already_rated_ids = {r["id"] for r in cases_mod.read_ratings(out)}
-        print(f"Resuming — {len(already_rated_ids)} cases already rated in {out}")
+        print(f"Resuming: {len(already_rated_ids)} cases already rated in {out}")
 
     n = 0
     try:
